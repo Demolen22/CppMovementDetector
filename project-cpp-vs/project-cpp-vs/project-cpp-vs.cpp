@@ -18,6 +18,11 @@ int main() {
 	VideoCapture cap(0);
 	Mat img1, img2, img2bw, d;
 	int counter = 1;
+	int frame_width = cap.get(cv::CAP_PROP_FRAME_WIDTH);
+	int frame_height = cap.get(cv::CAP_PROP_FRAME_HEIGHT);
+	VideoWriter videoOnlyMovement("video_only_movement.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10, Size(frame_width, frame_height));
+	VideoWriter video("video.avi", cv::VideoWriter::fourcc('M', 'J', 'P', 'G'), 10, Size(frame_width, frame_height));
+
 	while (true) {
 		cap.read(img1);
 		cap.read(img2);
@@ -26,12 +31,19 @@ int main() {
 		absdiff(img1, img2bw, d);
 		GaussianBlur(d, d, Size(3, 3), 3, 0);
 		Canny(d, d, 45, 80);
+		int nonZero = countNonZero(d);
+		video.write(img2);
+		if (nonZero > 50) { 
+			cout << "movement" << endl;
+			videoOnlyMovement.write(img2); 
+		}
 		Mat kernel = getStructuringElement(MORPH_RECT, Size(3,3));
 		dilate(d, d, kernel);
 		vector<vector<Point>> contours;
 		vector<Vec4i> priority;
 		findContours(d, contours, priority, RETR_EXTERNAL, CHAIN_APPROX_SIMPLE);
 		drawContours(img2, contours, -1, Scalar(0, 255, 0), 2);
+		 
 		imshow("Image", img2);
 		int k = waitKey(1);
 		string filename = "screen" + to_string(counter)+ ".png";
